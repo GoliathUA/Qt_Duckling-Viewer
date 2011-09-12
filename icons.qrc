@@ -1,0 +1,6 @@
+ <!DOCTYPE RCC><RCC version="1.0">
+ <qresource>
+     <file>images/title.png</file>
+     <file>images/gtk-refresh.png</file>
+ </qresource>
+ </RCC>
