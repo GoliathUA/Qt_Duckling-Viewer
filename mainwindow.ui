@@ -18,7 +18,25 @@
     <normaloff>:/images/title.png</normaloff>:/images/title.png</iconset>
   </property>
   <property name="styleSheet">
-   <string notr="true">QTabBar::tab { width: 200px; height: 20px; }</string>
+   <string notr="true">QTabBar::tab { 
+width: 200px; height: 20px; 
+ background: qlineargradient(spread:pad, x0:0, y1:1, x1:0, y1:0, stop:0 #bad7f9, stop:1 #a1c7f5);
+border-right:1px solid #788aa3;
+border-top:1px solid #788aa3;
+border-left:1px solid #788aa3;
+border-top-right-radius: 10px;
+border-top-left-radius: 10px;
+}
+
+QTabBar::tab:selected {
+width: 200px; height: 20px; 
+ background: qlineargradient(spread:pad, x0:0, y1:1, x1:0, y1:0, stop:0 #ffffff, stop:1 #f7f8f8);
+border-right:1px solid #788aa3;
+border-top:1px solid #788aa3;
+border-left:1px solid #788aa3;
+border-top-right-radius: 6px;
+border-top-left-radius: 6px;
+}</string>
   </property>
   <widget class="QWidget" name="centralWidget"/>
   <widget class="QMenuBar" name="menuBar">
@@ -34,6 +52,8 @@
     <property name="title">
      <string>Файл</string>
     </property>
+    <addaction name="newTabItem"/>
+    <addaction name="separator"/>
     <addaction name="action"/>
    </widget>
    <widget class="QMenu" name="viewTopMenu">
@@ -41,6 +61,7 @@
      <string>Вид</string>
     </property>
     <addaction name="alwayOnTopItem"/>
+    <addaction name="shortViewItem"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -48,10 +69,16 @@
     </property>
     <addaction name="actionOn_line"/>
     <addaction name="separator"/>
-    <addaction name="action_3"/>
+    <addaction name="aboutItem"/>
+   </widget>
+   <widget class="QMenu" name="menuBookmarks">
+    <property name="title">
+     <string>Bookmarks</string>
+    </property>
    </widget>
    <addaction name="menu"/>
    <addaction name="viewTopMenu"/>
+   <addaction name="menuBookmarks"/>
    <addaction name="menu_3"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -76,7 +103,7 @@
   </action>
   <action name="action">
    <property name="text">
-    <string>Выход</string>
+    <string>Exit</string>
    </property>
   </action>
   <action name="actionOn_line">
@@ -84,9 +111,26 @@
     <string>On-line помощь</string>
    </property>
   </action>
-  <action name="action_3">
+  <action name="aboutItem">
    <property name="text">
     <string>О программе</string>
+   </property>
+  </action>
+  <action name="newTabItem">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/images/tab-new.png</normaloff>:/images/tab-new.png</iconset>
+   </property>
+   <property name="text">
+    <string>New Tab</string>
+   </property>
+   <property name="shortcut">
+    <string/>
+   </property>
+  </action>
+  <action name="shortViewItem">
+   <property name="text">
+    <string>Short View</string>
    </property>
   </action>
  </widget>

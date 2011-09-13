@@ -8,11 +8,15 @@ STab::STab(QWidget *parent) : QWidget(parent), ui(new Ui::STab)
 
     connect(ui->loadButton, SIGNAL(clicked()), this, SLOT(setDownloadStreamPage()));
     connect(ui->urlEdit, SIGNAL(returnPressed()), this, SLOT(setDownloadStreamPage()));
+
+    ui->verticalLayout->setAlignment(Qt::AlignTop);
 }
 
 void STab::resizeEvent(QResizeEvent * event)
 {
     ui->verticalLayoutWidget->setGeometry(QRect(0, 0, this->width(), this->height()));
+    ui->frame->setGeometry(0, 0, this->width(), 37);
+    ui->horizontalLayoutWidget->setGeometry(ui->frame->x(), ui->frame->y(), ui->frame->width(), ui->frame->height());
 }
 
 void STab::setDownloadStreamPage()
@@ -46,46 +50,72 @@ void STab::handleStreamSourcePage()
     disconnect(reply, SIGNAL(finished()), this, SLOT(handleStreamSourcePage()));
 
     if (reply->error() != 0) {
-        emit titleChanged(QString("Нет стрима"));
+        emit titleChanged(trUtf8("Stream not found"));
         qDebug() << QString("Response error: ") << reply->error();
-        showMessage(QString::fromUtf8("Ошибка загрузки страницы, проверти правильность введенной ссылки."));
+        showMessage(trUtf8("Error: Stream not found"));
         return;
     }
 
-    QString content = QString::fromUtf8(reply->readAll());
+    QUrl url = reply->url();
+
+    QRegExp wwwRegExp(QString("^www."), Qt::CaseInsensitive);
+    QString host = url.host().replace(wwwRegExp, QString(""));
+
+    qDebug() << QString("Host: ") << host;
+
+    QSettings* const settings = Settings::getHostsInstance();
+
+    settings->beginGroup(host);
+    QString type = settings->value("type").toString();
+
+    if (type.isEmpty()) {
+        settings->endGroup();
+        emit titleChanged(trUtf8("Undefined site"));
+        showMessage(trUtf8("Error: Undefined site"));
+        return;
+    }
 
     //
-    QString szExp = QString("<iframe.*src=\"(http://www.own3d.tv/liveembed/[^\"]+)\"></iframe>");
-    QRegExp rx(szExp, Qt::CaseInsensitive);
+    bool isStart = false;
+    QString content = QString::fromUtf8(reply->readAll());
 
-    int pos = rx.indexIn( content);
-    QString szUrl;
-    while( ( pos = rx.indexIn( content, pos)) != -1) {
-        szUrl = rx.cap(1);
-        qDebug() << szUrl;
-        pos += rx.matchedLength();
+    if (type == QString("link")) {
+        QString regExp = settings->value("reg_exp").toString();
+        isStart = setStreamByLink(regExp, content);
     }
 
-    if (szUrl.isEmpty()) {
-        showMessage(QString::fromUtf8("Стрим не был найден на указанной страницы."));
+    settings->endGroup();
+
+    if (!isStart) {
+        showMessage(trUtf8("Stream not found on cerrent page"));
         return;
     }
-
-    connect(ui->webView, SIGNAL(loadFinished(bool)), this, SLOT(handleFinishStreamLoading(bool)));
 
     // Получаем title для таба
     QString titleRegExp = QString("<title>([^<]+)</title>");
     QRegExp titleRx(titleRegExp, Qt::CaseInsensitive);
 
     titleRx.indexIn(content);
-    QString title = titleRx.cap(1);
+    this->title = titleRx.cap(1);
 
-    emit titleChanged(title);
+    emit titleChanged(this->title);
+}
 
+bool STab::setStreamByLink(const QString& regExp, const QString& source)
+{
+    QRegExp streamRx(regExp, Qt::CaseInsensitive);
 
-    ui->webView->load(QUrl(szUrl));
+    streamRx.indexIn(source);
+    QString url = streamRx.cap(1);
 
-    //ui->webView->setContent(reply->readAll());
+    if (url.isEmpty()) {
+        return false;
+    }
+
+    connect(ui->webView, SIGNAL(loadFinished(bool)), this, SLOT(handleFinishStreamLoading(bool)));
+    ui->webView->load(QUrl(url));
+
+    return true;
 }
 
 void STab::handleFinishStreamLoading(bool)
@@ -110,18 +140,33 @@ void STab::showMessage(const QString& message)
 
 void STab::prepareUiToLoad()
 {
-    ui->loadButton->hide();
-    ui->urlEdit->hide();
+    ui->loadButton->setEnabled(false);
+    ui->urlEdit->setEnabled(false);
     ui->webView->hide();
     ui->progressBar->show();
 }
 
 void STab::prepareUi()
 {
-    ui->loadButton->show();
-    ui->urlEdit->show();
+    ui->loadButton->setEnabled(true);
+    ui->urlEdit->setEnabled(true);
     ui->progressBar->hide();
     ui->webView->show();
+}
+
+void STab::hideNavigationPanel()
+{
+    ui->frame->hide();
+}
+
+void STab::showNavigationPanel()
+{
+    ui->frame->show();
+}
+
+QString STab::getTitle()
+{
+    return this->title;
 }
 
 

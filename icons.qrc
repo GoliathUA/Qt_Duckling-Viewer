@@ -1,6 +1,8 @@
- <!DOCTYPE RCC><RCC version="1.0">
- <qresource>
-     <file>images/title.png</file>
-     <file>images/gtk-refresh.png</file>
- </qresource>
- </RCC>
+<RCC>
+    <qresource prefix="/">
+        <file>images/title.png</file>
+        <file>images/gtk-refresh.png</file>
+        <file>images/imagenes_loading.gif</file>
+        <file>images/tab-new.png</file>
+    </qresource>
+</RCC>

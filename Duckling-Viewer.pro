@@ -13,18 +13,31 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     stab.cpp \
-    tabstreamwidget.cpp
+    tabstreamwidget.cpp \
+    settings.cpp \
+    shortviewerdialog.cpp
 
 HEADERS  += mainwindow.h \
     stab.h \
-    tabstreamwidget.h
+    tabstreamwidget.h \
+    settings.h \
+    shortviewerdialog.h
 
 FORMS    += mainwindow.ui \
     stab.ui \
-    tabstreamwidget.ui
+    tabstreamwidget.ui \
+    shortviewerdialog.ui
 
 RESOURCES += \
     icons.qrc
+
+TRANSLATIONS += languages/en_EN.ts \
+               languages/ru_RU.ts
+
+
+
+
+
 
 
 

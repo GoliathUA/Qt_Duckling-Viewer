@@ -14,51 +14,31 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     this->tabWidget = new TabStreamWidget(this);
 
-
-
-
-
     connect(ui->alwayOnTopItem, SIGNAL(triggered()), this, SLOT(alwayOnTopOptionHandle()));
-
-
-    //setAlwaysOnTop(true);
-
-    //this->startupAction = new QAction(QString::fromUtf8("Запускать при загрузки системы"), this);
-
-        //connect(this->startupAction, SIGNAL(triggered()), this, SLOT(startupOptionHandle()));
+    connect(ui->aboutItem, SIGNAL(triggered()), this, SLOT(handleAboutItem()));
+    connect(ui->newTabItem, SIGNAL(triggered()), this->tabWidget, SLOT(createTab()));
+    connect(ui->shortViewItem, SIGNAL(triggered()), this, SLOT(handleShortView()));
 
 
 
+    //
+    QIcon icon = QIcon(":/images/title.png");
+    this->trayIcon = new QSystemTrayIcon(this);
+    this->trayIcon->setIcon(icon);
 
-    //QWidget *layout = new QWidget(parent);
+    this->trayMenu = new QMenu(this);
 
-    //STab *tab = new STab(parent);
+    QAction *logoutAction = new QAction(tr("Logout"), this);
+    //connect(logoutAction, SIGNAL(triggered()), this, SLOT(logout()));
+    this->trayMenu->addAction(logoutAction);
 
-    //tab->setSizePolicy(Geometry(QRect(0, 0, 800, 800));
-
-
-    //ui->tabWidget->addTab(tab, tr("asdasdad"));
-
-    //ui->tabWidget->setStyleSheet("QTabBar::tab { width: 100px; height: 20px; }");
-
-
-    //ui->tabWidget->height(200);
+    this->trayIcon->setContextMenu(trayMenu);
 
 
-    //ui->webView->load(QUrl("http://ru.twitch.tv/trundletime"));
-    //ui->webView->setContent(QString("<html><body><center>AAAAA</center><iframe height=\"360\" width=\"640\" frameborder=\"0\" src=\"http://www.own3d.tv/liveembed/13576\"></iframe><br/><a href=\"http://www.own3d.tv/live/13576\">CLGaming.net - bigfatlp</a></body></html>").toLatin1());
-
-    //ui->webView->setContent(QString("<html><body><center>AAAAA</center><object width=\"737\" height=\"414\" type=\"application/x-shockwave-flash\" data=\"http://sc2tv.ru/player/player.swf\"><param value=\"true\" name=\"allowFullScreen\"><param value=\"always\" name=\"allowScriptAccess\"><param value=\"transparent\" name=\"wmode\"><param value=\"http://sc2tv.ru/player/player.swf\" name=\"movie\"><param value=\"comment=rambler_online&amp;st=http://sc2tv.ru/player/styles/video28-1446.txt&amp;file=rtmp://fms01.rambler.ru/live/alex007&amp;vnAd=1&amp;vn_profile_id=152942&amp;vn_category_id=7\" name=\"flashvars\"></object></body></html>").toLatin1());
+    this->trayIcon->show();
 
 
 
-
-}
-
-
-void MainWindow::ssssss()
-{
-    qDebug("sdad!!!!");
 }
 
 void MainWindow::alwayOnTopOptionHandle()
@@ -92,6 +72,38 @@ void MainWindow::setAlwaysOnTop(bool checked)
 #endif
 }
 
+
+void MainWindow::handleAboutItem()
+{
+    QMessageBox::about(this, trUtf8("Duckling Viewer", "Application title"), trUtf8("About Application"));
+}
+
+void MainWindow::handleShortView()
+{
+    int currentTabIndex = this->tabWidget->currentIndex();
+    if (currentTabIndex == -1) {
+        QMessageBox::information(this, trUtf8("asdasd"), trUtf8("werwerwer"));
+        return;
+    }
+
+    this->hide();
+
+    STab *tab = qobject_cast<STab*>(this->tabWidget->widget(currentTabIndex));
+
+    ShortViewerDialog *viewer = new ShortViewerDialog(this);
+
+    connect(viewer, SIGNAL(closeViewer(STab *)), this, SLOT(handleCloseShortView(STab *)));
+    viewer->setTab(tab);
+    viewer->show();
+
+}
+
+void MainWindow::handleCloseShortView(STab *tab)
+{
+    tab->showNavigationPanel();
+    this->tabWidget->createTab(tab);
+    this->show();
+}
 
 
 MainWindow::~MainWindow()

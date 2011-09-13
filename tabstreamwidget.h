@@ -20,8 +20,11 @@ public:
 
 public slots:
     void createTab();
+    void createTab(STab *tab);
     void changeTabTitle(QString title);
     void handleCloseTab(int index);
+    void handleCurrentChanged(int index);
+
 
 private:
     Ui::TabStreamWidget *ui;

@@ -5,6 +5,7 @@
 #include <QtNetwork/QtNetwork>
 #include <QtNetwork/QNetworkAccessManager>
 
+#include "settings.h"
 
 namespace Ui {
     class STab;
@@ -17,8 +18,9 @@ public:
     explicit STab(QWidget *parent = 0);
     void resizeEvent(QResizeEvent * event);
     void showMessage(const QString& message);
-    void prepareUiToLoad();
-    void prepareUi();
+    void hideNavigationPanel();
+    void showNavigationPanel();
+    QString getTitle();
 
 signals:
 
@@ -33,6 +35,11 @@ signals:
 
 private:
     Ui::STab *ui;
+    QString title;
+
+    bool setStreamByLink(const QString& regExp, const QString& source);
+    void prepareUiToLoad();
+    void prepareUi();
 };
 
 #endif // STAB_H
