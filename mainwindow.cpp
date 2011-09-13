@@ -35,7 +35,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->trayIcon->setContextMenu(trayMenu);
 
 
-    this->trayIcon->show();
+
 
 
 
@@ -86,6 +86,7 @@ void MainWindow::handleShortView()
         return;
     }
 
+    this->trayIcon->show();
     this->hide();
 
     STab *tab = qobject_cast<STab*>(this->tabWidget->widget(currentTabIndex));
@@ -100,6 +101,7 @@ void MainWindow::handleShortView()
 
 void MainWindow::handleCloseShortView(STab *tab)
 {
+    this->trayIcon->hide();
     tab->showNavigationPanel();
     this->tabWidget->createTab(tab);
     this->show();

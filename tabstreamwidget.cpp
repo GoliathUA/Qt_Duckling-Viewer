@@ -38,8 +38,8 @@ void TabStreamWidget::changeTabTitle(QString title)
 
     int tabIndex = this->indexOf(tab);
 
-    this->setTabText(tabIndex, title.toUtf8());
-    this->setTabToolTip(tabIndex, title.toUtf8());
+    this->setTabText(tabIndex, title);
+    this->setTabToolTip(tabIndex, title);
 }
 
 void TabStreamWidget::handleCloseTab(int index)

@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QtNetwork/QtNetwork>
 #include <QtNetwork/QNetworkAccessManager>
+#include <QWebFrame>
+
 
 #include "settings.h"
 
@@ -36,10 +38,13 @@ signals:
 private:
     Ui::STab *ui;
     QString title;
+    QString currentGroup;
 
     bool setStreamByLink(const QString& regExp, const QString& source);
+    bool setStreamByEmbed(const QString& regExp, const QString& source);
     void prepareUiToLoad();
     void prepareUi();
+    bool exeStream(const QString& groupName, const QString& source);
 };
 
 #endif // STAB_H

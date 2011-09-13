@@ -21,17 +21,27 @@ void STab::resizeEvent(QResizeEvent * event)
 
 void STab::setDownloadStreamPage()
 {
+    qDebug("STab::setDownloadStreamPage");
+
     prepareUiToLoad();
 
     ui->progressBar->setValue(5);
 
     connect(ui->webView, SIGNAL(loadFinished(bool)), this, SLOT(handleStreamPage(bool)));
+
     ui->webView->load(QUrl(ui->urlEdit->text()));
 }
 
-void STab::handleStreamPage(bool)
+void STab::handleStreamPage(bool isLoad)
 {
+    qDebug("STab::handleStreamPage");
     disconnect(ui->webView, SIGNAL(loadFinished(bool)), this, SLOT(handleStreamPage(bool)));
+
+    if (!isLoad) {
+        emit titleChanged(trUtf8("Stream not found"));
+        showMessage(trUtf8("Error: Stream not found"));
+        return;
+    }
 
     ui->progressBar->setValue(45);
 
@@ -42,7 +52,9 @@ void STab::handleStreamPage(bool)
 }
 
 void STab::handleStreamSourcePage()
-{ 
+{
+    qDebug("STab::handleStreamSourcePage");
+
     QNetworkReply* reply = qobject_cast<QNetworkReply*>(const_cast<QObject*>(sender()));
 
     ui->progressBar->setValue(80);
@@ -61,32 +73,23 @@ void STab::handleStreamSourcePage()
     QRegExp wwwRegExp(QString("^www."), Qt::CaseInsensitive);
     QString host = url.host().replace(wwwRegExp, QString(""));
 
-    qDebug() << QString("Host: ") << host;
+    qDebug() << QString("Host") << host;
 
     QSettings* const settings = Settings::getHostsInstance();
 
     settings->beginGroup(host);
     QString type = settings->value("type").toString();
-
-    if (type.isEmpty()) {
-        settings->endGroup();
-        emit titleChanged(trUtf8("Undefined site"));
-        showMessage(trUtf8("Error: Undefined site"));
-        return;
-    }
-
-    //
-    bool isStart = false;
-    QString content = QString::fromUtf8(reply->readAll());
-
-    if (type == QString("link")) {
-        QString regExp = settings->value("reg_exp").toString();
-        isStart = setStreamByLink(regExp, content);
-    }
-
     settings->endGroup();
 
-    if (!isStart) {
+    if (type.isEmpty()) {
+        this->currentGroup = QString("default");
+    } else {
+        this->currentGroup = host;
+    }
+
+    QString content = QString::fromUtf8(reply->readAll());
+
+    if (!exeStream(this->currentGroup, content)) {
         showMessage(trUtf8("Stream not found on cerrent page"));
         return;
     }
@@ -118,11 +121,62 @@ bool STab::setStreamByLink(const QString& regExp, const QString& source)
     return true;
 }
 
+bool STab::setStreamByEmbed(const QString& regExp, const QString& source)
+{
+    qDebug("STab::setStreamByEmbed");
+
+    QRegExp streamRx(regExp, Qt::CaseInsensitive, QRegExp::RegExp2);
+    streamRx.setMinimal(true);
+
+    streamRx.indexIn(source);
+    QString code = streamRx.cap(1);
+
+    if (code.isEmpty()) {
+        return false;
+    }
+
+    connect(ui->webView, SIGNAL(loadFinished(bool)), this, SLOT(handleFinishStreamLoading(bool)));
+
+    QString content("<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><style>body{padding:0px; margin:0px;}</style></head><body>");
+    content.append(code);
+    content.append("</body></html>");
+
+    ui->webView->setContent(content.toUtf8());
+    return true;
+}
+
+
 void STab::handleFinishStreamLoading(bool)
 {
+    qDebug("STab::handleFinishStreamLoading");
+
     disconnect(ui->webView, SIGNAL(loadFinished(bool)), this, SLOT(handleFinishStreamLoading(bool)));
 
-    ui->progressBar->setValue(100);
+    ui->progressBar->setValue(99);
+
+    //
+    QSettings* const settings = Settings::getHostsInstance();
+    settings->beginGroup(this->currentGroup);
+    QString mode = settings->value("mode").toString();
+    if (mode == QString("regexps")) {
+        QWebFrame *frame = ui->webView->page()->mainFrame();
+        QString content = frame->toHtml();
+
+        int size = settings->beginReadArray("rule");
+        for (int i = 0; i < size; ++i) {
+            settings->setArrayIndex(i);
+
+            QRegExp rx(settings->value("from").toString());
+            content.replace(rx, settings->value("to").toString());
+        }
+
+        settings->endArray();
+
+        qDebug() << content;
+
+        ui->webView->setContent(content.toUtf8());
+    }
+    settings->endGroup();
 
     prepareUi();
 }
@@ -168,5 +222,58 @@ QString STab::getTitle()
 {
     return this->title;
 }
+
+bool STab::exeStream(const QString& groupName, const QString& source)
+{
+    qDebug("STab::exeStream");
+
+    this->currentGroup = groupName;
+
+    QSettings* const settings = Settings::getHostsInstance();
+
+    settings->beginGroup(groupName);
+    QString type = settings->value("type").toString();
+    settings->endGroup();
+
+    qDebug() << QString("Type") << type;
+
+    if (type == QString("link")) {
+        settings->beginGroup(groupName);
+        QString regExp = settings->value("reg_exp").toString();
+        settings->endGroup();
+        qDebug() << QString("Stream RegExp: ") << regExp;
+        return setStreamByLink(regExp, source);
+    } else if (type == QString("multi")) {
+
+        settings->beginGroup(groupName);
+        QList<QString> lists;
+        int size = settings->beginReadArray("rule");
+        for (int i = 0; i < size; ++i) {
+            settings->setArrayIndex(i);
+            QString nextGroupName = settings->value("name").toString();
+            lists.append(nextGroupName);
+        }
+
+        settings->endArray();
+        settings->endGroup();
+
+        for (int j = 0; j < lists.size(); j++) {
+            qDebug() << QString("Group name") << j << lists[j];
+            if(exeStream(lists[j], source)) {
+                return true;
+            }
+        }
+
+    } else if (type == QString("embed")) {
+        settings->beginGroup(groupName);
+        QString regExp = settings->value("reg_exp").toString();
+        settings->endGroup();
+        qDebug() << QString("Stream RegExp") << regExp;
+        return setStreamByEmbed(regExp, source);
+    }
+
+    return false;
+}
+
 
 
